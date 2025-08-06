@@ -68,3 +68,4 @@ template-close="conf/default-http-delete.tmpl"
 method-close="DELETE"
 send-close=true
 threshold=1
+skip-zookeeper-lock=true

@@ -126,3 +126,20 @@ INFO skipping zookeeper lock for single instance deployment
 ```
 
 而不是之前的 Zookeeper 错误。 
+
+## 编译
+```bash
+GOOS=linux GOARCH=amd64 go build -o burrow-linux-amd64 .
+file burrow-linux-amd64
+#从file命令的输出可以看到：
+#ELF 64-bit LSB executable：Linux可执行文件
+#x86-64：64位x86架构
+#statically linked：静态链接
+#with debug_info, not stripped：包含调试信息
+
+# 编译多个架构
+GOOS=linux GOARCH=amd64 go build -o burrow-linux-amd64 .
+GOOS=linux GOARCH=arm64 go build -o burrow-linux-arm64 .
+GOOS=darwin GOARCH=amd64 go build -o burrow-darwin-amd64 .
+GOOS=darwin GOARCH=arm64 go build -o burrow-darwin-arm64 .
+```

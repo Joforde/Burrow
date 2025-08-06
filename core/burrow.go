@@ -40,17 +40,27 @@ func newCoordinators(app *protocol.ApplicationContext) []protocol.Coordinator {
 
 	haveNotifiers := viper.IsSet("notifier")
 
-	// Only include zookeeper if we have dependant coordinators
+	// Only include zookeeper if we have dependant coordinators and not skipping zookeeper lock
 	if haveNotifiers {
-		coordinators = append(coordinators,
-			&zookeeper.Coordinator{
-				App: app,
-				Log: app.Logger.With(
-					zap.String("type", "coordinator"),
-					zap.String("name", "zookeeper"),
-				),
-			},
-		)
+		skipZkLock := false
+		for name := range viper.GetStringMap("notifier") {
+			if viper.GetBool("notifier." + name + ".skip-zookeeper-lock") {
+				skipZkLock = true
+				break
+			}
+		}
+
+		if !skipZkLock {
+			coordinators = append(coordinators,
+				&zookeeper.Coordinator{
+					App: app,
+					Log: app.Logger.With(
+						zap.String("type", "coordinator"),
+						zap.String("name", "zookeeper"),
+					),
+				},
+			)
+		}
 	}
 
 	coordinators = append(coordinators,

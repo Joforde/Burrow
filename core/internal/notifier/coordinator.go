@@ -296,6 +296,28 @@ func (nc *Coordinator) Stop() error {
 }
 
 func (nc *Coordinator) manageEvalLoop() {
+	// Check if we should skip zookeeper lock (for single instance deployments)
+	skipZkLock := false
+	for name := range viper.GetStringMap("notifier") {
+		if viper.GetBool("notifier." + name + ".skip-zookeeper-lock") {
+			skipZkLock = true
+			break
+		}
+	}
+
+	if skipZkLock {
+		// Skip zookeeper lock for single instance deployments
+		nc.Log.Info("skipping zookeeper lock for single instance deployment")
+		nc.doEvaluations = true
+		nc.running.Add(1)
+		go nc.sendEvaluatorRequests()
+
+		// Wait for shutdown signal
+		<-nc.quitChannel
+		return
+	}
+
+	// Original distributed lock logic for multi-instance deployments
 	lock := nc.App.Zookeeper.NewLock(nc.App.ZookeeperRoot + "/notifier")
 
 	for {
@@ -550,7 +572,7 @@ func (nc *Coordinator) notifyModule(module Module, status *protocol.ConsumerGrou
 	}
 
 	// Only send a notification if the current status is above the module's threshold
-	if int(status.Status) < viper.GetInt("notifier."+module.GetName()+".threshold") {
+	if int(status.Status) < viper.GetInt("notifier."+moduleName+".threshold") {
 		return
 	}
 
